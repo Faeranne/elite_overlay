@@ -1,0 +1,148 @@
+[gd_scene load_steps=9 format=2]
+
+[ext_resource path="res://keyboard.tscn" type="PackedScene" id=1]
+[ext_resource path="res://addons/godot-openvr/OpenVROverlay.gdns" type="Script" id=2]
+[ext_resource path="res://switch.tscn" type="PackedScene" id=3]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Spatial
+
+
+# Declare member variables here. Examples:
+# var a = 2
+# var b = \"text\"
+var disable_overlay=false;
+
+
+# Called when the node enters the scene tree for the first time.
+func _init():	# Get configuration object
+	var OpenVRConfig = preload(\"res://addons/godot-openvr/OpenVRConfig.gdns\").new()
+	if(disable_overlay):
+		OpenVRConfig.set_application_type(1) # Set to OVERLAY MODE = 2, NORMAL MODE = 1
+	else:
+		OpenVRConfig.set_application_type(2) # Set to OVERLAY MODE = 2, NORMAL MODE = 1
+	OpenVRConfig.set_tracking_universe(1) # Set to SEATED MODE = 0, STANDING MODE = 1, RAW MODE = 2
+	var interface = ARVRServer.find_interface(\"OpenVR\")
+	if interface and interface.initialize():
+		OS.vsync_enabled = false
+		Engine.target_fps = 90
+	
+
+func _ready():
+	get_viewport().arvr = true
+	get_viewport().hdr = false
+
+	$\"keyboard_input\".set_overlay_visible(true)
+	$\"screen1\".set_overlay_visible(true)
+	if(disable_overlay):
+		$\"keyboard_input\".arvr=false;
+		$\"screen1\".arvr=false;
+	 
+func _process(_delta):
+	var tracker = $\"ARVROrigin/ARVRController/Spatial/Keyboard Face/Post Rotate\".global_transform
+	var tracker2 = $\"ARVROrigin/ARVRController/Spatial/screen1\".global_transform
+	$\"keyboard_input\".overlay_position_absolute(tracker);
+	$\"screen1\".overlay_position_absolute(tracker2)
+	#$\"switch_panel\".track_relative_to_device(3,$\"tracker/switch\".transform)
+	#$\"switch_panel\".set_overlay_visible(true)
+	pass;
+"
+
+[sub_resource type="PlaneMesh" id=2]
+
+[sub_resource type="CubeMesh" id=3]
+
+[sub_resource type="GDScript" id=4]
+script/source = "extends Spatial
+
+
+# Declare member variables here. Examples:
+# var a = 2
+# var b = \"text\"
+
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	pass # Replace with function body.
+
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta):
+	self.look_at($\"../../../ARVRCamera\".translation,Vector3(0,1,0))
+"
+
+[sub_resource type="GDScript" id=5]
+script/source = "extends Spatial
+
+
+# Declare member variables here. Examples:
+# var a = 2
+# var b = \"text\"
+
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	pass # Replace with function body.
+
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta):
+	pass
+"
+
+[node name="Spatial" type="Spatial"]
+script = SubResource( 1 )
+
+[node name="keyboard_input" type="Viewport" parent="."]
+size = Vector2( 5, 10 )
+render_target_update_mode = 3
+script = ExtResource( 2 )
+overlay_width_in_meters = 0.5
+
+[node name="Node2D" parent="keyboard_input" instance=ExtResource( 1 )]
+
+[node name="screen1" type="Viewport" parent="."]
+size = Vector2( 10, 10 )
+own_world = true
+render_target_update_mode = 3
+script = ExtResource( 2 )
+overlay_width_in_meters = 0.5
+
+[node name="Spatial" parent="screen1" instance=ExtResource( 3 )]
+
+[node name="ARVROrigin" type="ARVROrigin" parent="."]
+
+[node name="ARVRController" type="ARVRController" parent="ARVROrigin"]
+transform = Transform( -1, 3.25841e-07, 1.62921e-07, -1.62921e-07, 2.65431e-14, -1, -3.25841e-07, -1, 2.65431e-14, 0, 0, 0 )
+controller_id = 4
+
+[node name="Spatial" type="Spatial" parent="ARVROrigin/ARVRController"]
+transform = Transform( -1, -3.25841e-07, 5.30863e-14, 0, -1.62921e-07, -1, 3.25841e-07, -1, 1.62921e-07, 0, 0, 0 )
+
+[node name="screen1" type="Spatial" parent="ARVROrigin/ARVRController/Spatial"]
+transform = Transform( 0.946621, -0.110249, 0.302908, 0, 0.93969, 0.342019, -0.322348, -0.323763, 0.889531, -3.57082, 0.784015, -1.4668 )
+
+[node name="MeshInstance" type="MeshInstance" parent="ARVROrigin/ARVRController/Spatial/screen1"]
+transform = Transform( 1, -5.96046e-08, -1.19209e-07, 1.49012e-08, 0.171946, -0.985107, 0, 0.985107, 0.171946, 0.472061, -0.695786, 0.404644 )
+mesh = SubResource( 2 )
+material/0 = null
+
+[node name="MeshInstance" type="MeshInstance" parent="ARVROrigin/ARVRController/Spatial"]
+transform = Transform( 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 2.97294, 0, -1.85698 )
+mesh = SubResource( 3 )
+material/0 = null
+
+[node name="Keyboard Face" type="Spatial" parent="ARVROrigin/ARVRController/Spatial"]
+transform = Transform( 1, -3.75706e-15, 0, -3.75705e-15, 1, 0, 0, 0, 1, -5.81355e-07, 0.483542, -1.5424 )
+script = SubResource( 4 )
+
+[node name="Post Rotate" type="Spatial" parent="ARVROrigin/ARVRController/Spatial/Keyboard Face"]
+transform = Transform( 1, 0, 0, 0, -0.999998, 3.25841e-07, 0, -3.25841e-07, -0.999998, 0, 0, 0 )
+script = SubResource( 5 )
+
+[node name="MeshInstance" type="MeshInstance" parent="ARVROrigin/ARVRController/Spatial/Keyboard Face/Post Rotate"]
+transform = Transform( 1, -4.75955e-14, 1.29958e-13, -1.37259e-14, -1.19209e-07, -1, 9.36153e-15, 1, -1.19209e-07, 0, 0, 0 )
+mesh = SubResource( 2 )
+material/0 = null
+
+[node name="ARVRCamera" type="ARVRCamera" parent="ARVROrigin"]
